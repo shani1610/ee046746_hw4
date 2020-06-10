@@ -45,6 +45,3 @@ def warpH(im1, H, out_size):
     lab_im1 = rgb2lab(normalized_im1)
     return warp_im1
 
-
-b, g, r = cv2.split(im1)
-plt.imshow(b)
