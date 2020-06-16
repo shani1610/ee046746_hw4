@@ -23,26 +23,11 @@ def getPoints(im1, im2, N):
     p2=np.array(p2).T
     return p1, p2
 
-full_path_img1 = "./data/incline_R.png"
-im1 = cv2.imread(full_path_img1)
-image1 = cv2.cvtColor(im1, cv2.COLOR_BGR2RGB)
-
-full_path_img2 = "./data/incline_L.png"
-im2 = cv2.imread(full_path_img2)
-image2 = cv2.cvtColor(im2, cv2.COLOR_BGR2RGB)
-
-N=8
-
-p1, p2 = getPoints(image1, image1, N)
-print('p1')
-print(p1.shape[0])
-
-
-#
+# ---------------------------------------------
 
 def computeH(p1, p2):
-    assert (p1.shape[1] == p2.shape[1])
-    assert (p1.shape[0] == 2)
+    assert (p1.shape[1] == p2.shape[1]) #N
+    assert (p1.shape[0] == 2) #columns x and y
     N=p1.shape[1]
     A=np.zeros((2*N,9))
     for i in range(N):
@@ -52,11 +37,28 @@ def computeH(p1, p2):
         vi=p2[1][i]
         A[2*i] = [-ui, -vi, -1, 0, 0, 0, ui*xi, vi*xi, xi]
         A[2*i+1] = [0, 0, 0, -ui, -vi, -1, ui*yi, vi*yi, yi]
-    (U, D, V) = np.linalg.svd(A, False)
+    (U, D, V_t) = np.linalg.svd(A, True)
+    V=V_t.T
     H2to1 = V[:, -1]
-    #H2to1 = np.reshape(V[:, -1], [3,3])
+    H2to1 = np.reshape(H2to1, [3,3])
     return H2to1
 
+# test -----------------------------------------
+full_path_img1 = "./data/incline_L.png"
+im1 = cv2.imread(full_path_img1)
+image1 = cv2.cvtColor(im1, cv2.COLOR_BGR2RGB)
+
+full_path_img2 = "./data/incline_R.png"
+im2 = cv2.imread(full_path_img2)
+image2 = cv2.cvtColor(im2, cv2.COLOR_BGR2RGB)
+
+N=8
+
+p1, p2 = getPoints(image1, image2, N)
 H2to1=computeH(p1, p2)
 print('H matrix')
 print(H2to1)
+
+h, status = cv2.findHomography(im1, im2)
+print('h matrix')
+print(h)
