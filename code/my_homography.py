@@ -418,27 +418,6 @@ def getPoints_SIFT(im1, im2):
     # number of matches that will serve us to calculate the homograph
     matchesToCountOn = 10
 
-    # img3 = cv2.drawMatches(im1, kp1, im2, kp2, matches[:matchesToCountOn], None, flags=2)
-    # plt.figure(), plt.imshow(img3), plt.title('matching points with SIFT')
-    # _ = plt.axis('off')
-    # plt.show()
-
-    # KNN:
-    # # BFMatcher with default params
-    # bf = cv2.BFMatcher()
-    # matches = bf.knnMatch(des1, des2, k=2)
-    # Apply ratio test
-    # good = []
-    # for m, n in matches:
-    #     if m.distance < 0.7 * n.distance:
-    #         good.append([m])
-    #
-    # # cv2.drawMatchesKnn expects list of lists as matches.
-    # img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good, None, flags=2)
-    # plt.figure(), plt.imshow(img3), plt.title('matching points with SIFT')
-    # _ = plt.axis('off')
-    # plt.show()
-
     pAll = np.stack([kp1[match.queryIdx].pt + kp2[match.trainIdx].pt for match in
                      matches[:min(len(matches), matchesToCountOn)]]).T
     p1 = pAll[:2]
@@ -492,8 +471,8 @@ if __name__ == '__main__':
     im2 = im2[::downSampleRate, ::downSampleRate, :]    # downSample because the memory problems
     #Q2_2(im1, im2)
     #Q2_3(im1, im2)
-    Q2_4(im1, im2)
-    # Q2_5(im1, im2)
+    #Q2_4(im1, im2)
+    Q2_5(im1, im2)
     # panoImg = mergeImages(im2, im1)
     # beach_panorama_SIFT, beach_panorama_manual, palace_panorama_SIFT, palace_panorama_manual = Q2_7()
     # beach_panorama_SIFT = Q2_7()

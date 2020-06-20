@@ -24,124 +24,89 @@ def FindCorners(im1, H):
     # # This function used is function Translation that is used in HW function wrapH
     # H_inverse = np.linalg.inv(H)
     #
-    # left_top_original = np.array([0, 0, 1]).reshape(-1, 1)
-    # left_bottom_original = np.array([0, im1.shape[0], 1]).reshape(-1, 1)
-    # right_top_original = np.array([im1.shape[1], 0, 1]).reshape(-1, 1)
-    # right_bottom_original = np.array([im1.shape[1], im1.shape[0], 1]).reshape(-1, 1)
+    left_top_original = np.array([0, 0, 1]).reshape(-1, 1)
+    left_bottom_original = np.array([0, im1.shape[0], 1]).reshape(-1, 1)
+    right_top_original = np.array([im1.shape[1], 0, 1]).reshape(-1, 1)
+    right_bottom_original = np.array([im1.shape[1], im1.shape[0], 1]).reshape(-1, 1)
     #
-    # left_top = H_inverse @ left_top_original
-    # left_bottom = H_inverse @ left_bottom_original
-    # right_top = H_inverse @ right_top_original
-    # right_bottom = H_inverse @ right_bottom_original
+    left_top =pinv(H) @ left_top_original
+    left_bottom = pinv(H) @ left_bottom_original
+    right_top =pinv(H) @ right_top_original
+    right_bottom = pinv(H) @ right_bottom_original
     #
     # # normalized
-    # left_top /= left_top[2, :]
-    # left_bottom /= left_bottom[2, :]
-    # right_top /= right_top[2, :]
-    # right_bottom /= right_bottom[2, :]
+    left_top /= left_top[2, :]
+    left_bottom /= left_bottom[2, :]
+    right_top /= right_top[2, :]
+    right_bottom /= right_bottom[2, :]
+
+    print(left_top)
+    print(left_bottom)
+    print(right_top)
+    print(right_bottom)
+    axis_top_button = [left_top, left_bottom, right_top, right_bottom]
     #
-    # return left_top, left_bottom, right_top, right_bottom
- # find the limit of the transformed image so we won't get cut image
-    # we do it with the transformation of the corners (homograph transforms plane to plane)
-    corners = pinv(H) @ np.array([[0, 0, im1.shape[1], im1.shape[1]],
-                                  [0, im1.shape[0], 0, im1.shape[0]],
-                                  [1, 1, 1, 1]])
-    corners /= corners[2, :]
-    # first seperate to right and left corners
-    leftCorners = corners[:2, np.argsort(corners[0])[:2]]
-    rightCorners = corners[:2, np.argsort(corners[0])[2:]]
+    return axis_top_button
 
-    # now seperate also to top and bottom corners
-    LT = leftCorners[:, leftCorners[1].argmin()]  # Left Top
-    LB = leftCorners[:, leftCorners[1].argmax()]  # Left Bottom
-    RT = rightCorners[:, rightCorners[1].argmin()]  # Right Top
-    RB = rightCorners[:, rightCorners[1].argmax()]  # Right Bottom
-
-    return LT, LB, RT, RB
 
 def Translation(im1, H):
-        # # This function used is in HW function wrapH
-        #
-        # left_top, left_bottom, right_top, right_bottom = FindCorners(im1, H)
-        #
-        # axis_y_top = int(min(right_top[1], left_top[1]))
-        # axis_y_bottom = int(max(right_bottom[1], left_bottom[1]))
-        # axis_x_left = int(min(left_top[0], left_bottom[0]))
-        # axis_x_right = int(max(right_top[0], right_bottom[0]))
-        # axis_arr = [axis_y_top, axis_y_bottom, axis_x_left, axis_x_right ]
-        # out_size = (abs(axis_y_bottom - axis_y_top), abs((axis_x_right - axis_x_left)))
-        # trans_mat = np.array([[1, 0, axis_x_left], [0, 1, axis_y_top], [0, 0, 1]])
-        # H_trans = H @ trans_mat #h2to1
-        # return H_trans, out_size, axis_arr
-    LT, LB, RT, RB = FindCorners(im1, H)
-    xLeft = int(min(LT[0], LB[0]))       # the most left index
-    xRight = int(max(RT[0], RB[0]))      # the most right index
-    yTop = int(min(RT[1], LT[1]))    # the most top index
-    yBootom = int(max(RB[1], LB[1]))     # the most bottom index
+    # # This function used is in HW function wrapH
+    #
 
-    outSize = (yBootom - yTop, xRight - xLeft)
-    tx = xLeft
-    ty = yTop
-    translationMatrix = np.array([[1, 0, tx],
-                                  [0, 1, ty],
-                                  [0, 0, 1]])
-    # xLeft and yTop are mapped to 0
-    H_fixed = H @ translationMatrix
-    arr = [xLeft, xRight, yTop, yBootom]
-    return H_fixed, outSize, arr
+    axis_top_button = FindCorners(im1, H)
+    left_top = axis_top_button[0]
+    left_bottom = axis_top_button[1]
+    right_top = axis_top_button[2]
+    right_bottom = axis_top_button[3]
+
+    axis_y_top = int(min(right_top[1], left_top[1]))
+    axis_y_bottom = int(max(right_bottom[1], left_bottom[1]))
+    axis_x_left = int(min(left_top[0], left_bottom[0]))
+    axis_x_right = int(max(right_top[0], right_bottom[0]))
+
+    print(axis_y_top)
+    print(axis_y_bottom)
+    print(axis_x_left)
+    print(axis_x_right)
+
+    axis_arr = [axis_y_top, axis_y_bottom, axis_x_left, axis_x_right]
+    out_size = (abs(axis_y_bottom - axis_y_top), abs((axis_x_right - axis_x_left)))
+    trans_mat = np.array([[1, 0, axis_x_left], [0, 1, axis_y_top], [0, 0, 1]])
+    H_trans = H @ trans_mat  # h2to1
+    return H_trans, out_size, axis_arr
 
 
 def getScaled(im2, warp_im1, axis_arr):
-        #axis_arr = [axis_y_top, axis_y_bottom, axis_x_left, axis_x_right ]
-        #
-        # axis_y_top = axis_arr[0]
-        # axis_y_bottom = axis_arr[1]
-        # axis_x_left = axis_arr[2]
-        # axis_x_right = axis_arr[3]
-        #
-        # shape_y = max(axis_y_bottom, im2.shape[0]) - min(axis_y_top, 0)
-        #
-        # shape_x = max(axis_x_right, im2.shape[1]) - min(axis_x_left, 0)
-        #
-        # print('shape y')
-        # print(shape_y)
-        #
-        # print('shape x')
-        # print(shape_x)
-        #
-        # warp_im1_scaled = np.zeros((shape_y, shape_x, 3))
-        #
-        # im2_scaled = np.zeros(warp_im1_scaled.shape)
-        #
-        # im2_mask = np.where(im2 > 0)
-        # im2_scaled[im2_mask[0] - axis_y_top, im2_mask[1] - axis_x_left, im2_mask[2]] = im2[im2_mask]
-        # print('im2_scaled')
-        # print(im2_scaled)
-        #
-        # im1_warp_mask = np.where(warp_im1 > 0)
-        # warp_im1_scaled[im1_warp_mask] = warp_im1[im1_warp_mask]
-        # print('warp_im1_scaled')
-        # print(warp_im1_scaled)
-        #
-        # return warp_im1_scaled, im2_scaled
-    #axis_arr = [axis_y_top, axis_y_bottom, axis_x_left, axis_x_right]
-        #arr = [xLeft, xRight, yTop, yBootom]
-    xLeft = axis_arr[0]
-    xRight = axis_arr[1]
-    yTop = axis_arr[2]
-    yBootom = axis_arr[3]
-    warp_im1_big = np.zeros((max(yBootom, im2.shape[0]) - min(yTop, 0), (max(xRight, im2.shape[1]) - (min(xLeft, 0))), 3))
-    im1_warp_maskIdx = np.where(warp_im1 > 0)
-    warp_im1_big[im1_warp_maskIdx] = warp_im1[im1_warp_maskIdx]
-    im2_big = np.zeros(warp_im1_big.shape)
-    im2_maskIdx = np.where(im2 > 0)
-    im2_big[im2_maskIdx[0] - yTop, im2_maskIdx[1] - xLeft, im2_maskIdx[2]] = im2[im2_maskIdx]
-    return im2_big, warp_im1_big
+    #
+    axis_y_top = axis_arr[0]
+    axis_y_bottom = axis_arr[1]
+    axis_x_left = axis_arr[2]
+    axis_x_right = axis_arr[3]
+
+    shape_y = max(axis_y_bottom, im2.shape[0]) - min(axis_y_top, 0)
+    shape_x = max(axis_x_right, im2.shape[1]) - min(axis_x_left, 0)
+
+    warp_im1_scaled = np.zeros((shape_y, shape_x, 3))
+    im2_scaled = np.zeros(warp_im1_scaled.shape)
+    #
+    im2_mask = np.where(im2 > 0)
+    im2_scaled[im2_mask[0] - axis_y_top, im2_mask[1] - axis_x_left, im2_mask[2]] = im2[im2_mask]
+    # print('im2_scaled')
+    # print(im2_scaled)
+    #
+    im1_warp_mask = np.where(warp_im1 > 0)
+    warp_im1_scaled[im1_warp_mask] = warp_im1[im1_warp_mask]
+    # print('warp_im1_scaled')
+    # print(warp_im1_scaled)
+    #
+    return warp_im1_scaled, im2_scaled
+
     # Extra functions end
 
     # --------------------------------------------------------------------------------
 
     # HW functions:
+
 def getPoints(im1, im2, N):
         fig = plt.figure(figsize=(9, 13))
         fig.add_subplot(1, 2, 1)
@@ -180,82 +145,40 @@ def computeH(p1, p2):
         H2to1 = np.reshape(H2to1, [3, 3])
         return H2to1
 
+
 def warpH(im1, H, out_size):
-        # lab_image = cv2.cvtColor(im1, cv2.COLOR_RGB2LAB)  # LAB
-        # x_range = np.arange(0, lab_image.shape[1])
-        # y_range = np.arange(0, lab_image.shape[0])
-        # warp_im1 = np.zeros((out_size[0], out_size[1], 3), dtype="uint8")
-        # f = {}
-        # for i, channel in enumerate(["L", "A", "B"]):
-        #     z = lab_image[:, :, i]
-        #     f[channel] = interp2d(x_range, y_range, z, copy="False", kind='linear')
-        # #H_inverse = np.linalg.inv(H)
-        # rgb_zero = np.array([0, 0, 0], dtype="uint8").reshape(1, 1, 3)
-        # lab_zero = cv2.cvtColor(rgb_zero, cv2.COLOR_RGB2LAB)
-        # for i in tqdm(range(warp_im1.shape[1])):  # x
-        #     for j in range(warp_im1.shape[0]):  # y
-        #         p2 = np.array([i, j, 1]).reshape(-1, 1)  # indexs of wrap_im1
-        #         p1 = H @ p2
-        #         p1 = p1 / p1[2, 0]  # normalized the third index
-        #         if p1[0] < 0 or p1[0] >= im1.shape[1] or p1[1] < 0 or p1[1] >= im1.shape[0]:
-        #             warp_im1[j, i, :] = lab_zero
-        #             continue
-        #         for t, channel in enumerate(["L", "A", "B"]):
-        #             warp_im1[j, i, t] = int(round(f[channel](p1[0, 0], p1[1, 0])[0]))
-        # warp_im1 = cv2.cvtColor(warp_im1.astype("uint8"), cv2.COLOR_LAB2RGB)
-        # return warp_im1
-        im1_LAB = color.rgb2lab(im1)  # convert to lab color space
-        eps = 1e-17
-        warp_im1_LAB = np.zeros(tuple(out_size) + (3,))
-        x_out, y_out = np.meshgrid(np.arange(out_size[1], dtype='uint16'), np.arange(out_size[0], dtype='uint16'))
-        x_out = x_out.reshape(-1)  # row stack more convenient
-        y_out = y_out.reshape(-1)  # row stack more convenient
-        # q are the homogeneous indices of the out image
-        q = np.concatenate((x_out.reshape(1, -1), y_out.reshape(1, -1), np.ones((1, x_out.size), dtype='uint16')),
-                           axis=0)
-        # p are the homogeneous indices of the input image
-        p = H @ q
-        p /= p[2, :] + eps  # don't divide by 0
+    lab_image = cv2.cvtColor(im1, cv2.COLOR_RGB2LAB)  # LAB
+    warp_im1 = np.zeros((out_size[0], out_size[1], 3), dtype="uint8")
+    x_range = np.arange(0, lab_image.shape[1])
+    y_range = np.arange(0, lab_image.shape[0])
+    zero_val = cv2.cvtColor(np.array([0, 0, 0], dtype="uint8").reshape(1, 1, 3), cv2.COLOR_RGB2LAB)
+    f = {}
 
-        x_in = p[0]
-        y_in = p[1]
+    for idx, ch in enumerate(["L", "A", "B"]):
+        z_range = lab_image[:, :, idx]
+        f[ch] = interp2d(x_range, y_range, z_range, copy="False", kind='linear')
+    # H_inverse = np.linalg.inv(H)
 
-        insideOfLimit = np.where(~((x_in < 0) | (y_in < 0) | (x_in >= im1.shape[1]) | (y_in >= im1.shape[0])))[0]
-        # remove the indices that fall out of the im1 shape
-        x_out = x_out[insideOfLimit]
-        y_out = y_out[insideOfLimit]
-        x_in = x_in[insideOfLimit]
-        y_in = y_in[insideOfLimit]
+    for x in tqdm(range(warp_im1.shape[1])):  # x
+        for y in range(warp_im1.shape[0]):  # y
+            p2 = np.array([x, y, 1]).reshape(-1, 1)  # indexs of wrap_im1
+            p1 = H @ p2
+            p1 = p1 / p1[2, 0]  # normalized the third index
+            if p1[0] > 0 and p1[1] > 0 and p1[0] < im1.shape[1] and p1[1] < im1.shape[0]:
+                for idx, ch in enumerate(["L", "A", "B"]):
+                    warp_im1[y, x, idx] = int(round(f[ch](p1[0, 0], p1[1, 0])[0]))
+                continue
+            warp_im1[y, x, :] = zero_val
 
-        # first, care about integer indices which are not need interpolation
-        integerIdx = (x_in % 1 == 0) & (y_in % 1 == 0)
-        warp_im1_LAB[y_out[integerIdx], x_out[integerIdx], :] = im1_LAB[x_in[integerIdx].astype('uint32'),
-                                                                y_in[integerIdx].astype('uint32'), :]
+    warp_im1 = cv2.cvtColor(warp_im1.astype("uint8"), cv2.COLOR_LAB2RGB)
+    return warp_im1
 
-        # now for the interpolation part:
-        interpIndices = np.where(~integerIdx)[0]
-        for channel in range(im1.shape[2]):
-            f = interp2d(np.arange(im1.shape[1]), np.arange(im1.shape[0]), im1_LAB[:, :, channel], kind='linear',
-                         fill_value=0)
-            warp_im1_LAB[y_out[interpIndices], x_out[interpIndices], channel] = \
-                np.array([float(f(XX, YY)) for XX, YY in zip(x_in[interpIndices], y_in[interpIndices])])
-
-        warp_im1 = color.lab2rgb(warp_im1_LAB)  # range of values [0, 1]
-        warp_im1 = (warp_im1 * 255).astype('uint8')  # range of values [0, 255]
-        return warp_im1
 
 def imageStitching(img1, wrap_img2):
-        # panoImg = np.maximum(img1, wrap_img2)
-        #
-        # panoImg = np.uint8(panoImg)
-        panoImg = np.zeros(img1.shape, dtype='uint8')
-        im1_mask = img1 > 0
-        im2_wrap_mask = wrap_img2 > 0
-        panoImg[im1_mask] = img1[im1_mask]
-        panoImg[im2_wrap_mask] = wrap_img2[im2_wrap_mask]
-
-
-        return panoImg
+    panoImg = np.maximum(img1, wrap_img2)
+    #
+    panoImg = np.uint8(panoImg)
+    return panoImg
 
     #
     # def ransacH(matches, locs1, locs2, nIter, tol):
@@ -264,11 +187,137 @@ def imageStitching(img1, wrap_img2):
     #     """
     #     return bestH
     #
-    # def getPoints_SIFT(im1, im2):
-    #     """
-    #     Your code here
-    #     """
-    #     return p1, p2
+
+
+def getPoints_SIFT1(im1, im2):
+
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    # find the keypoints and descriptors with SIFT
+    kp1, des1 = sift.detectAndCompute(im1, None)
+    kp2, des2 = sift.detectAndCompute(im2, None)
+
+    # BFMatcher with default params
+    bf = cv2.BFMatcher()
+    matches = bf.knnMatch(des1, des2, k=2)
+    print(matches)
+
+    # Apply ratio test
+    good_matches = []
+    for m, n in matches:
+        if m.distance < 0.75 * n.distance:
+            good_matches.append([m])
+
+    #good_matches = sorted(good_matches, key=lambda x: x.distance)
+    #good_matches = good_matches.sort(key=lambda match: match.distance)
+    #target_image = np.zeros((im1.shape[1], im1.shape[0]))
+    # cv2.drawMatchesKnn expects list of lists as matches.
+    #img3 = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good_matches, target_image, flags=2)
+    #plt.imshow(img3), plt.show()
+
+    p1 = []
+    p2 = []
+    p1 = np.float32([kp1[m[0].queryIdx].pt for m in good_matches[:min(10, len(good_matches))]]).reshape(-1, 2)
+    p2 = np.float32([kp2[m[0].trainIdx].pt for m in good_matches[:min(10, len(good_matches))]]).reshape(-1, 2)
+
+    p1=p1.T
+    p2=p2.T
+
+    return p1, p2
+
+
+def getPoints_SIFT(im1, im2):
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    # find the keypoints and descriptors with SIFT
+    kp1, des1 = sift.detectAndCompute(im1, None)
+    kp2, des2 = sift.detectAndCompute(im2, None)
+
+    # BFMatcher with default params
+    bf = cv2.BFMatcher()
+
+    # Match descriptors.
+    matches = bf.match(des1, des2)
+    matches = sorted(matches, key=lambda x: x.distance)
+    number_of_matches = min(len(matches), 10)
+
+    p_cor = []
+    p_cor = np.stack([kp1[match.queryIdx].pt + kp2[match.trainIdx].pt for match in
+                     matches[:number_of_matches]]).T
+    p1 = p_cor[:2]
+    p2 = p_cor[2:]
+    return p1, p2
+
+def prepareToMerge(xLeft, xRight, yTop, yBootom, warp_im1, im2):
+
+    warp_im1_big = np.zeros((max(yBootom, im2.shape[0]) - min(yTop, 0), max(xRight, im2.shape[1]) - min(xLeft, 0), 3),
+                            dtype='uint8')
+    im1_warp_maskIdx = np.where(warp_im1 > 0)
+    warp_im1_big[im1_warp_maskIdx[0] + max(yTop, 0), im1_warp_maskIdx[1], im1_warp_maskIdx[2]] = warp_im1[im1_warp_maskIdx]
+    im2_big = np.zeros(warp_im1_big.shape, dtype='uint8')
+    im2_maskIdx = np.where(im2 > 0)
+    im2_big[im2_maskIdx[0] + max(-yTop, 0), im2_maskIdx[1] + max(xLeft, 0), im2_maskIdx[2]] = im2[im2_maskIdx]
+    return warp_im1_big, im2_big
+
+
+def panoramaTwoImg(im1, im2):
+    p2, p1 = getPoints_SIFT(im1, im2)
+    H2to1 = computeH(p1, p2)
+    H_trans, out_size, axis_arr = Translation(im1, H2to1)
+    warp_im1 = warpH(im1, H_trans, out_size)
+    warp_im1_scaled, im2_scaled = getScaled(im2, warp_im1, axis_arr)
+    panoramaTest = imageStitching(im2_scaled, warp_im1_scaled)
+    plt.figure(5)
+    plt.imshow(panoramaTest)
+    plt.show()
+    return panoramaTest
+
+def beachTest():
+    # images beach
+    beach1 = cv2.imread('data/beach1.jpg')
+    beach2 = cv2.imread('data/beach2.jpg')
+    beach3 = cv2.imread('data/beach3.jpg')
+    beach4 = cv2.imread('data/beach4.jpg')
+    beach5 = cv2.imread('data/beach5.jpg')
+    im_beach1 = cv2.cvtColor(beach1, cv2.COLOR_BGR2RGB)
+    im_beach2 = cv2.cvtColor(beach2, cv2.COLOR_BGR2RGB)
+    im_beach3 = cv2.cvtColor(beach3, cv2.COLOR_BGR2RGB)
+    im_beach4 = cv2.cvtColor(beach4, cv2.COLOR_BGR2RGB)
+    im_beach5 = cv2.cvtColor(beach5, cv2.COLOR_BGR2RGB)
+
+    # 1+2
+    im_beach1 = cv2.resize(im_beach1, (im_beach1.shape[0] // downSampleRate,
+                                       im_beach1.shape[1] // downSampleRate))
+    im_beach2 = cv2.resize(im_beach2, (im_beach2.shape[0] // downSampleRate,
+                                       im_beach2.shape[1] // downSampleRate))
+    panorama12 = panoramaTwoImg(im_beach1, im_beach2)
+    cv2.imwrite('./my_data/beach_panorama12_SIFT.jpg', panorama12)
+
+    # 1+2+3
+    panorama12 = cv2.imread('./my_data/beach_panorama12_SIFT.jpg')
+    panorama12 = cv2.cvtColor(panorama12, cv2.COLOR_BGR2RGB)
+    im_beach3 = cv2.resize(im_beach3, (im_beach3.shape[0] // downSampleRate,
+                                       im_beach3.shape[1] // downSampleRate))
+    panorama123 = panoramaTwoImg(panorama12, im_beach3)
+    cv2.imwrite('./my_data/beach_panorama123_SIFT.jpg', panorama123)
+
+    # 4+5
+    im_beach4 = cv2.resize(im_beach4, (im_beach4.shape[0] // downSampleRate,
+                                       im_beach4.shape[1] // downSampleRate))
+    im_beach5 = cv2.resize(im_beach5, (im_beach5.shape[0] // downSampleRate,
+                                       im_beach5.shape[1] // downSampleRate))
+    panorama45 = panoramaTwoImg(im_beach4, im_beach5)
+    cv2.imwrite('./my_data/beach_panorama45_SIFT.jpg', panorama45)
+
+    # 1+2+3+4+5
+    panorama123 = cv2.imread('./my_data/beach_panorama123_SIFT.jpg')
+    panorama123 = cv2.cvtColor(panorama123, cv2.COLOR_BGR2RGB)
+    panorama45 = cv2.imread('./my_data/beach_panorama45_SIFT.jpg')
+    panorama45 = cv2.cvtColor(panorama45, cv2.COLOR_BGR2RGB)
+    panorama_final_beach = panoramaTwoImg(panorama123, panorama45)
+    cv2.imwrite('./my_data/beach_panorama_final_beach_SIFT.jpg', panorama_final_beach)
+    return beachPanoramaTest
+
 
 if __name__ == '__main__':
         print('my_homography')
@@ -277,27 +326,47 @@ if __name__ == '__main__':
         image2 = cv2.imread('data/incline_R.png')
         im1 = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
         im2 = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
-        im1 = im1[::downSampleRate, ::downSampleRate, :]  # downSample because the memory problems
-        im2 = im2[::downSampleRate, ::downSampleRate, :]  # downSample because the memory problems
-        # part 2.1
-        #N = 8
-        #p1, p2 = getPoints(im1, im2, N)
-        # part 2.2
-        #H2to1 = computeH(p1, p2)
-        H2to1 = np.array([[1.69424090e-03,  1.92939042e-05,  9.98620205e-01],
-                   [-2.63154587e-04,  2.48851693e-03, -5.23534795e-02],
-                   [-1.14541269e-06,  1.20477243e-07,  2.76877412e-03]])
+        #im1 = im1[::downSampleRate, ::downSampleRate, :]  # downSample because the memory problems
+        #im2 = im2[::downSampleRate, ::downSampleRate, :]  # downSample because the memory problems
 
-        # part 2.3
-        H_trans, out_size, axis_arr = Translation(im1, H2to1)  # not in HW
-        warp_im1 = warpH(im1, H_trans, out_size)
-        plt.figure(2)
-        plt.imshow(warp_im1)
-        plt.show()
-        im2_scaled, warp_im1_scaled = getScaled(im2, warp_im1, axis_arr)
-        plt.imshow(warp_im1_scaled)
-        plt.imshow(im2_scaled)
-        panoramaTest = imageStitching(im2_scaled, warp_im1_scaled)
-        plt.figure(3)
-        plt.imshow(panoramaTest)
-        plt.show()
+        # images beach
+        beach1 = cv2.imread('data/sintra5.JPG')
+        beach2 = cv2.imread('data/sintra4.JPG')
+        beach3 = cv2.imread('data/sintra3.JPG')
+        beach4 = cv2.imread('data/sintra2.JPG')
+        beach5 = cv2.imread('data/sintra1.JPG')
+        im_beach1 = cv2.cvtColor(beach1, cv2.COLOR_BGR2RGB)
+        im_beach2 = cv2.cvtColor(beach2, cv2.COLOR_BGR2RGB)
+        im_beach3 = cv2.cvtColor(beach3, cv2.COLOR_BGR2RGB)
+        im_beach4 = cv2.cvtColor(beach4, cv2.COLOR_BGR2RGB)
+        im_beach5 = cv2.cvtColor(beach5, cv2.COLOR_BGR2RGB)
+
+        # 1+2
+        im_beach1 = cv2.resize(im_beach1, (im_beach1.shape[0] // downSampleRate,
+                                               im_beach1.shape[1] // downSampleRate))
+        im_beach2 = cv2.resize(im_beach2, (im_beach2.shape[0] // downSampleRate,
+                                               im_beach2.shape[1] // downSampleRate))
+        panorama12 = panoramaTwoImg(im_beach1, im_beach2)
+        cv2.imwrite('./my_data/beach_panorama12_SIFT.jpg', panorama12)
+
+        # 1+2+3
+        panorama12 = cv2.imread('./my_data/beach_panorama12_SIFT.jpg')
+        panorama12 = cv2.cvtColor(panorama12, cv2.COLOR_BGR2RGB)
+        im_beach3 = cv2.resize(im_beach3, (im_beach3.shape[0] // downSampleRate,
+                                               im_beach3.shape[1] // downSampleRate))
+        panorama123 = panoramaTwoImg(panorama12, im_beach3)
+        cv2.imwrite('./my_data/beach_panorama123_SIFT.jpg', panorama123)
+
+        # 1+2+3+4
+        im_beach4 = cv2.resize(im_beach4, (im_beach4.shape[0] // downSampleRate,
+                                               im_beach4.shape[1] // downSampleRate))
+        panorama1234 = panoramaTwoImg(panorama123, im_beach4)
+        cv2.imwrite('./my_data/beach_panorama1234_SIFT.jpg', panorama1234)
+
+        # 1+2+3+4+5
+        panorama1234 = cv2.imread('./my_data/beach_panorama1234_SIFT.jpg')
+        panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
+        im_beach5 = cv2.resize(im_beach5, (im_beach5.shape[0] // downSampleRate,
+                                               im_beach5.shape[1] // downSampleRate))
+        panorama_final_beach = panoramaTwoImg(panorama1234, im_beach5)
+        cv2.imwrite('./my_data/beach_panorama_final_beach_SIFT.jpg', panorama_final_beach)
