@@ -142,7 +142,7 @@ def getPoints(im1, im2, N):
         p2 = np.array(p2).T
         return p1, p2
 
-def computeH(p1, p2):
+def computeH_OLD(p1, p2):
         assert (p1.shape[1] == p2.shape[1])  # N
         assert (p1.shape[0] == 2)  # columns x and y
         N = p1.shape[1]
@@ -162,6 +162,26 @@ def computeH(p1, p2):
         H2to1 = np.reshape(H2to1, [3, 3])
         return H2to1
 
+def computeH(p1, p2):
+    #CHEN
+    # verify matching number of points and points dim.
+    assert (p1.shape[1] == p2.shape[1])
+    assert (p1.shape[0] == 2)
+
+    # create a matrix of the points matching equation (Ah=0)
+    A = []
+    for i in range(p1.shape[1]):
+        A.append(np.array([-p2[0,i], -p2[1,i], -1, 0, 0, 0, p2[0,i]*p1[0,i], p2[1,i]*p1[0,i], p1[0,i]]))
+        A.append(np.array([0, 0, 0, -p2[0,i], -p2[1,i], -1,  p2[0,i]*p1[1,i], p2[1,i]*p1[1,i], p1[1,i]]))
+    A = np.array(A)
+
+    # SVD decomposition
+    _, _, Vt = np.linalg.svd(A)
+
+    # solution is given by the eigen-vector corresponding to the smallest singular value
+    H2to1 = np.reshape(Vt.T[:,-1],[3,3])
+
+    return H2to1  # normalize matrix
 
 def warpH(im1, H, out_size):
     lab_image = cv2.cvtColor(im1, cv2.COLOR_RGB2LAB)  # LAB
@@ -243,7 +263,7 @@ def getPoints_SIFT1(im1, im2):
     return p1, p2
 
 
-def getPoints_SIFT(im1, im2):
+def getPoints_SIFT_Barak(im1, im2):
     sift = cv2.xfeatures2d.SIFT_create()
 
     # find the keypoints and descriptors with SIFT
@@ -265,6 +285,82 @@ def getPoints_SIFT(im1, im2):
     p2 = p_cor[2:]
     return p1, p2
 
+def getPoints_SIFT(im1,im2):
+    #chen
+    gray = cv2.cvtColor(im1, cv2.COLOR_RGB2GRAY)
+    #sift = x2d.SIFT_create()
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    kp1, dest1= sift.detectAndCompute(gray, None)
+
+    gray = cv2.cvtColor(im2, cv2.COLOR_RGB2GRAY)
+    #sift = x2d.SIFT_create()
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    kp2, dest2= sift.detectAndCompute(gray, None)
+
+    bf = cv2.BFMatcher()
+    matches = bf.knnMatch(dest1, dest2, k=2)
+
+    # Apply ratio test
+    good = []
+    for m, n in matches:
+        if m.distance < 0.4 * n.distance:
+            good.append([m])
+
+    # Draw first 10 matches.
+    # knn_image = cv2.drawMatchesKnn(im1, kp1, im2, kp2, good[:10], None, flags=2)
+    # plt.imshow(knn_image), plt.show()
+    # plt.show()
+
+    p1 = []
+    p2 = []
+    for i in good:
+        p1.append(kp1[i[0].queryIdx].pt)
+        p2.append(kp2[i[0].trainIdx].pt)
+    return np.asarray(p1).T, np.asarray(p2).T
+
+def getPoints_SIFT_new(im1, im2, N=8):
+    # Initiate SIFT detector (limit to 10 key points)
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    # find the keypoints and descriptors with SIFT
+    kp1, des1 = sift.detectAndCompute(im1, None)
+    kp2, des2 = sift.detectAndCompute(im2, None)
+
+    # create BFMatcher object
+    bf = cv2.BFMatcher()  # cv2.NORM_L2, crossCheck=True
+    # Match descriptors.
+    matches = bf.knnMatch(des1, des2, k=2)
+
+    # Apply ratio test
+    good = []
+    for m, n in matches:
+        if m.distance < 0.75 * n.distance:
+            good.append(m)
+
+    # matches = good
+
+    # Sort them in the order of their distance.
+    distance = lambda m: m.distance
+    N = min(N, len(good))
+    good = sorted(good, key=distance)[:N]
+
+    # take the N best matching points
+    p1 = np.zeros(shape=(2, N))
+    p2 = np.zeros(shape=(2, N))
+
+    for i, mat in enumerate(good):
+        idx1 = mat.queryIdx
+        idx2 = mat.trainIdx
+
+        (x1, y1) = kp1[idx1].pt
+        (x2, y2) = kp2[idx2].pt
+
+        p1[:, i] = np.array((x1, y1))
+        p2[:, i] = np.array((x2, y2))
+    return p1, p2
+
 def prepareToMerge(xLeft, xRight, yTop, yBootom, warp_im1, im2):
 
     warp_im1_big = np.zeros((max(yBootom, im2.shape[0]) - min(yTop, 0), max(xRight, im2.shape[1]) - min(xLeft, 0), 3),
@@ -276,11 +372,10 @@ def prepareToMerge(xLeft, xRight, yTop, yBootom, warp_im1, im2):
     im2_big[im2_maskIdx[0] + max(-yTop, 0), im2_maskIdx[1] + max(xLeft, 0), im2_maskIdx[2]] = im2[im2_maskIdx]
     return warp_im1_big, im2_big
 
-
 def panoramaTwoImg(im1, im2, warp_is_left):
-    p2, p1 = getPoints_SIFT(im1, im2)
+    p1, p2 = getPoints_SIFT(im1, im2)
     #H2to1 = computeH(p1, p2)
-    nIter = 1000
+    nIter = 4000
     tol = 5
     bestH = ransacH(p1, p2, nIter, tol)
     H_trans, out_size, axis_arr = Translation(im1, bestH)
@@ -295,7 +390,7 @@ def panoramaTwoImg(im1, im2, warp_is_left):
     plt.figure(5)
     plt.imshow(panoramaTest)
     plt.show()
-    return panoramaTest, H2to1
+    return panoramaTest
 
 def panoramaTwoImgTmp(im1, im2, warp_is_left, H2to1):
     p1, p2 = getPoints_SIFT(im1, im2)
@@ -338,8 +433,7 @@ def ransacH_Someone(p1, p2, nIter, tol=5):
             bestH = H
     return bestH
 
-
-def ransacH(p1, p2, nIter, tol):
+def ransacH_Barak(p1, p2, nIter, tol):
     """
     Your code here  # TODO: DOC!
     """
@@ -350,9 +444,9 @@ def ransacH(p1, p2, nIter, tol):
     bestInliersIndices = np.array([])
     for _ in range(nIter):
         groupIndices = np.random.choice(matches_Number, minSizeToCalcH)
-        while groupIndices in usedGroupIndices:
-            # if we already used those matches, take others
-            groupIndices = np.random.choice(matches_Number, minSizeToCalcH)
+        # while groupIndices in usedGroupIndices:
+        #     # if we already used those matches, take others
+        #     groupIndices = np.random.choice(matches_Number, minSizeToCalcH)
         usedGroupIndices.append(groupIndices)
         p1_sample = p1[:, groupIndices]  # sample randomly
         p2_sample = p2[:, groupIndices]  # sample randomly
@@ -373,6 +467,24 @@ def ransacH(p1, p2, nIter, tol):
             bestInliersIndices = inliesIndices
 
     bestH = computeH(p1[:, bestInliersIndices], p2[:, bestInliersIndices])
+    return bestH
+
+def ransacH(p1, p2, nIter, tol):
+    # chen
+    bestH = np.zeros([3, 3])
+    max_score = 0
+    for i in range(nIter):
+        model = np.random.choice(p1.shape[1], 4, replace=False)  # choose 4 random matches
+        H = computeH(p1[:, model], p2[:, model])  # compute H for model
+        p1_match = H @ np.vstack((p2, np.ones([1, p2.shape[1]])))  # transform to homogeneous
+        p1_match /= p1_match[2, :]  # normalization
+        p1_match = p1_match[:2, :]  # convert back to (x,y) points
+        dist = np.linalg.norm(p1 - p1_match, axis=0)
+        score = np.sum(dist <= tol)
+        if max_score < score:
+            max_score = score
+            bestH = H
+
     return bestH
 
 def beachTest():
@@ -448,40 +560,26 @@ def sintraTest():
                                          im_sintra5.shape[1] // downSampleRate))
 
     # 2+3
-    panorama23, H3to2 = panoramaTwoImg(im_sintra2, im_sintra3,  warp_is_left=False)
+    panorama23 = panoramaTwoImg(im_sintra2, im_sintra3,  warp_is_left=False)
     cv2.imwrite('./my_data/sintra_panorama23_SIFT.jpg', panorama23)
-
-    # 3+4
-    panorama34, H3to4 = panoramaTwoImg(im_sintra4, im_sintra3,  warp_is_left=True)
-    cv2.imwrite('./my_data/sintra_panorama34_SIFT.jpg', panorama34)
-
-    # 1+2
-    panorama12, H2to1 = panoramaTwoImg(im_sintra1, im_sintra2,  warp_is_left=False)
-    cv2.imwrite('./my_data/sintra_panorama12_SIFT.jpg', panorama12)
-
-    # 4+5
-    panorama45, H4to5 = panoramaTwoImg(im_sintra5, im_sintra4,  warp_is_left=True)
-    cv2.imwrite('./my_data/sintra_panorama45_SIFT.jpg', panorama45)
 
     # 2+3+4
     panorama23 = cv2.imread('./my_data/sintra_panorama23_SIFT.jpg')
     panorama23 = cv2.cvtColor(panorama23, cv2.COLOR_BGR2RGB)
-    panorama34 = cv2.imread('./my_data/sintra_panorama34_SIFT.jpg')
-    panorama34 = cv2.cvtColor(panorama34, cv2.COLOR_BGR2RGB)
-    panorama234, H23to34 = panoramaTwoImg(panorama34, panorama23, warp_is_left=True)
+    panorama234 = panoramaTwoImg(im_sintra4, panorama23, True)
     cv2.imwrite('./my_data/sintra_panorama234_SIFT.jpg', panorama234)
 
     # 1+2+3+4
     panorama234 = cv2.imread('./my_data/sintra_panorama234_SIFT.jpg')
     panorama234 = cv2.cvtColor(panorama234, cv2.COLOR_BGR2RGB)
-    panorama1234 = panoramaTwoImgTmp(im_sintra1, panorama234, False, H2to1)
+    panorama1234 = panoramaTwoImg(im_sintra1, panorama234, False)
     cv2.imwrite('./my_data/sintra_panorama1234_SIFT.jpg', panorama1234)
 
-    #1+2+3+4+5
+    # 1+2+3+4+5
     panorama1234 = cv2.imread('./my_data/sintra_panorama1234_SIFT.jpg')
     panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
-    panorama_final_sintra, Hfinal = panoramaTwoImgTmp(im_sintra5, panorama1234, True, H4to5)
-    cv2.imwrite('./my_data/sintra_panorama_final_SIFT.jpg', panorama_final_sintra)
+    panorama_final_sintra = panoramaTwoImg(im_sintra5, panorama1234, True)
+    cv2.imwrite('./my_data/sintra_panorama_final_sintra_SIFT.jpg', panorama_final_sintra)
     return panorama_final_sintra
 
 if __name__ == '__main__':
