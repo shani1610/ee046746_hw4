@@ -260,6 +260,7 @@ def sintraTest(getPointMethod, useRANSAC):
     panorama_final_sintra = panoramaTwoImg(im_sintra5, panorama1234, True, getPointMethod, useRANSAC)
     panorama_final_sintra = cv2.cvtColor(panorama_final_sintra, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/sintra_panorama_final_sintra_SIFT.jpg', panorama_final_sintra)
+
     return panorama_final_sintra
 
 # Homework function:
@@ -427,6 +428,8 @@ def q2_3():
     H2to1 = computeH(p1, p2)
     H_trans, out_size, axis_arr = Translation(im1, H2to1)
     wrap_im1 = warpH(im1, H_trans, out_size)
+    wrap_im1 = cv2.cvtColor(wrap_im1, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/wrap_im1_manual.jpg', wrap_im1)
 
 def q2_4():
     # Panorama stitching
@@ -446,6 +449,8 @@ def q2_4():
     warp_is_left = True
     warp_im1_scaled, im2_scaled = getScaled(im2, wrap_im1, axis_arr, warp_is_left)
     panoramaTest = imageStitching(im2_scaled, warp_im1_scaled)
+    panoramaTest = cv2.cvtColor(panoramaTest, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/panoramaTest_incline_manual.jpg', panoramaTest)
 
 def q2_5():
     # autonomous panorama stitching using SIFT
@@ -481,8 +486,9 @@ def q2_10():
     sintraTest(getPointMethod='SIFT', useRANSAC=True)
 
 if __name__ == '__main__':
-    print('my sintra')
-    panorama_final_sintra = sintraTest(getPointMethod='SIFT', useRANSAC=True)
-    plt.figure(6)
-    plt.imshow(panorama_final_sintra)
-    plt.show()
+    q2_4()
+    # print('my sintra')
+    # panorama_final_sintra = sintraTest(getPointMethod='SIFT', useRANSAC=True)
+    # plt.figure(6)
+    # plt.imshow(panorama_final_sintra)
+    # plt.show()
