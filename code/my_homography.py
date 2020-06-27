@@ -159,39 +159,44 @@ def panoramaTwoImg(im1, im2, warp_is_left, getPointMethod, useRANSAC):
 
 # def PanoramaTest()
 def beachTest():
+
     # images beach
     beach1 = cv2.imread('data/beach1.jpg')
     beach2 = cv2.imread('data/beach2.jpg')
     beach3 = cv2.imread('data/beach3.jpg')
     beach4 = cv2.imread('data/beach4.jpg')
     beach5 = cv2.imread('data/beach5.jpg')
+
     im_beach1 = cv2.cvtColor(beach1, cv2.COLOR_BGR2RGB)
     im_beach2 = cv2.cvtColor(beach2, cv2.COLOR_BGR2RGB)
     im_beach3 = cv2.cvtColor(beach3, cv2.COLOR_BGR2RGB)
     im_beach4 = cv2.cvtColor(beach4, cv2.COLOR_BGR2RGB)
     im_beach5 = cv2.cvtColor(beach5, cv2.COLOR_BGR2RGB)
 
-    # 1+2
     im_beach1 = cv2.resize(im_beach1, (im_beach1.shape[0] // downSampleRate,
                                        im_beach1.shape[1] // downSampleRate))
     im_beach2 = cv2.resize(im_beach2, (im_beach2.shape[0] // downSampleRate,
                                        im_beach2.shape[1] // downSampleRate))
+    im_beach3 = cv2.resize(im_beach3, (im_beach3.shape[0] // downSampleRate,
+                                       im_beach3.shape[1] // downSampleRate))
+    im_beach4 = cv2.resize(im_beach4, (im_beach4.shape[0] // downSampleRate,
+                                       im_beach4.shape[1] // downSampleRate))
+    im_beach5 = cv2.resize(im_beach5, (im_beach5.shape[0] // downSampleRate,
+                                       im_beach5.shape[1] // downSampleRate))
+
+    # 1+2
     panorama12 = panoramaTwoImg(im_beach1, im_beach2)
     cv2.imwrite('./my_data/beach_panorama12_SIFT.jpg', panorama12)
 
     # 1+2+3
     panorama12 = cv2.imread('./my_data/beach_panorama12_SIFT.jpg')
     panorama12 = cv2.cvtColor(panorama12, cv2.COLOR_BGR2RGB)
-    im_beach3 = cv2.resize(im_beach3, (im_beach3.shape[0] // downSampleRate,
-                                       im_beach3.shape[1] // downSampleRate))
+
     panorama123 = panoramaTwoImg(panorama12, im_beach3)
     cv2.imwrite('./my_data/beach_panorama123_SIFT.jpg', panorama123)
 
     # 4+5
-    im_beach4 = cv2.resize(im_beach4, (im_beach4.shape[0] // downSampleRate,
-                                       im_beach4.shape[1] // downSampleRate))
-    im_beach5 = cv2.resize(im_beach5, (im_beach5.shape[0] // downSampleRate,
-                                       im_beach5.shape[1] // downSampleRate))
+
     panorama45 = panoramaTwoImg(im_beach4, im_beach5)
     cv2.imwrite('./my_data/beach_panorama45_SIFT.jpg', panorama45)
 
@@ -232,24 +237,28 @@ def sintraTest(getPointMethod, useRANSAC):
 
     # 2+3
     panorama23 = panoramaTwoImg(im_sintra2, im_sintra3, False, getPointMethod, useRANSAC)
+    panorama23 = cv2.cvtColor(panorama23, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/sintra_panorama23_SIFT.jpg', panorama23)
 
     # 2+3+4
     panorama23 = cv2.imread('./my_data/sintra_panorama23_SIFT.jpg')
     panorama23 = cv2.cvtColor(panorama23, cv2.COLOR_BGR2RGB)
     panorama234 = panoramaTwoImg(im_sintra4, panorama23, True, getPointMethod, useRANSAC)
+    panorama234 = cv2.cvtColor(panorama234, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/sintra_panorama234_SIFT.jpg', panorama234)
 
     # 1+2+3+4
     panorama234 = cv2.imread('./my_data/sintra_panorama234_SIFT.jpg')
     panorama234 = cv2.cvtColor(panorama234, cv2.COLOR_BGR2RGB)
     panorama1234 = panoramaTwoImg(im_sintra1, panorama234, False, getPointMethod, useRANSAC)
+    panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/sintra_panorama1234_SIFT.jpg', panorama1234)
 
     # 1+2+3+4+5
     panorama1234 = cv2.imread('./my_data/sintra_panorama1234_SIFT.jpg')
     panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
     panorama_final_sintra = panoramaTwoImg(im_sintra5, panorama1234, True, getPointMethod, useRANSAC)
+    panorama_final_sintra = cv2.cvtColor(panorama_final_sintra, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/sintra_panorama_final_sintra_SIFT.jpg', panorama_final_sintra)
     return panorama_final_sintra
 
@@ -318,17 +327,8 @@ def warpH(im1, H, out_size):
 
 def imageStitching(img1, wrap_img2):
     panoImg = np.maximum(img1, wrap_img2)
-    #
     panoImg = np.uint8(panoImg)
     return panoImg
-
-    #
-    # def ransacH(matches, locs1, locs2, nIter, tol):
-    #     """
-    #     Your code here
-    #     """
-    #     return bestH
-    #
 
 def getPoints_SIFT(im1, im2):
     gray = cv2.cvtColor(im1, cv2.COLOR_RGB2GRAY)
@@ -468,7 +468,6 @@ def q2_5():
 def q2_7():
     # compare SIFT and Manuale image selection
     # beach
-
     # portugal
     sintraTest(getPointMethod='Manual', useRANSAC=False)
     sintraTest(getPointMethod='SIFT', useRANSAC=False)
