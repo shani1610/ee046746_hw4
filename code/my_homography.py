@@ -136,7 +136,7 @@ def prepareToMerge(xLeft, xRight, yTop, yBootom, warp_im1, im2):
 
 def panoramaTwoImg(im1, im2, warp_is_left, getPointMethod, useRANSAC):
     if getPointMethod == 'Manual':
-        p1, p2 = getPoints(im1, im2)
+        p1, p2 = getPoints(im1, im2, N=8)
     else:  # gerPointMethod=='SIFT':
         p1, p2 = getPoints_SIFT(im1, im2)
     if useRANSAC:
@@ -158,8 +158,8 @@ def panoramaTwoImg(im1, im2, warp_is_left, getPointMethod, useRANSAC):
     return panoramaTest
 
 # def PanoramaTest()
-def beachTest():
-
+def beachTest(getPointMethod, useRANSAC):
+    downSampleRate = 2
     # images beach
     beach1 = cv2.imread('data/beach1.jpg')
     beach2 = cv2.imread('data/beach2.jpg')
@@ -173,6 +173,12 @@ def beachTest():
     im_beach4 = cv2.cvtColor(beach4, cv2.COLOR_BGR2RGB)
     im_beach5 = cv2.cvtColor(beach5, cv2.COLOR_BGR2RGB)
 
+    im_beach1 = cv2.rotate(im_beach1, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    im_beach2 = cv2.rotate(im_beach2, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    im_beach3 = cv2.rotate(im_beach3, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    im_beach4 = cv2.rotate(im_beach4, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    im_beach5 = cv2.rotate(im_beach5, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
     im_beach1 = cv2.resize(im_beach1, (im_beach1.shape[0] // downSampleRate,
                                        im_beach1.shape[1] // downSampleRate))
     im_beach2 = cv2.resize(im_beach2, (im_beach2.shape[0] // downSampleRate,
@@ -184,30 +190,33 @@ def beachTest():
     im_beach5 = cv2.resize(im_beach5, (im_beach5.shape[0] // downSampleRate,
                                        im_beach5.shape[1] // downSampleRate))
 
-    # 1+2
-    panorama12 = panoramaTwoImg(im_beach1, im_beach2)
-    cv2.imwrite('./my_data/beach_panorama12_SIFT.jpg', panorama12)
+    # 2+3
+    panorama23 = panoramaTwoImg(im_beach2, im_beach3, False, getPointMethod, useRANSAC)
+    panorama23 = cv2.cvtColor(panorama23, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/beach_panorama23_SIFT.jpg', panorama23)
 
-    # 1+2+3
-    panorama12 = cv2.imread('./my_data/beach_panorama12_SIFT.jpg')
-    panorama12 = cv2.cvtColor(panorama12, cv2.COLOR_BGR2RGB)
+    # 2+3+4
+    panorama23 = cv2.imread('./my_data/beach_panorama23_SIFT.jpg')
+    panorama23 = cv2.cvtColor(panorama23, cv2.COLOR_BGR2RGB)
+    panorama234 = panoramaTwoImg(im_beach4, panorama23, True, getPointMethod, useRANSAC)
+    panorama234 = cv2.cvtColor(panorama234, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/beach_panorama234_SIFT.jpg', panorama234)
 
-    panorama123 = panoramaTwoImg(panorama12, im_beach3)
-    cv2.imwrite('./my_data/beach_panorama123_SIFT.jpg', panorama123)
-
-    # 4+5
-
-    panorama45 = panoramaTwoImg(im_beach4, im_beach5)
-    cv2.imwrite('./my_data/beach_panorama45_SIFT.jpg', panorama45)
+    # 1+2+3+4
+    panorama234 = cv2.imread('./my_data/beach_panorama234_SIFT.jpg')
+    panorama234 = cv2.cvtColor(panorama234, cv2.COLOR_BGR2RGB)
+    panorama1234 = panoramaTwoImg(im_beach1, panorama234, False, getPointMethod, useRANSAC)
+    panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/beach_panorama1234_SIFT.jpg', panorama1234)
 
     # 1+2+3+4+5
-    panorama123 = cv2.imread('./my_data/beach_panorama123_SIFT.jpg')
-    panorama123 = cv2.cvtColor(panorama123, cv2.COLOR_BGR2RGB)
-    panorama45 = cv2.imread('./my_data/beach_panorama45_SIFT.jpg')
-    panorama45 = cv2.cvtColor(panorama45, cv2.COLOR_BGR2RGB)
-    panorama_final_beach = panoramaTwoImg(panorama123, panorama45)
+    panorama1234 = cv2.imread('./my_data/beach_panorama1234_SIFT.jpg')
+    panorama1234 = cv2.cvtColor(panorama1234, cv2.COLOR_BGR2RGB)
+    panorama_final_beach = panoramaTwoImg(im_beach5, panorama1234, True, getPointMethod, useRANSAC)
+    panorama_final_beach = cv2.cvtColor(panorama_final_beach, cv2.COLOR_BGR2RGB)
     cv2.imwrite('./my_data/beach_panorama_final_beach_SIFT.jpg', panorama_final_beach)
-    return beachPanoramaTest
+
+    return panorama_final_beach
 
 def sintraTest(getPointMethod, useRANSAC):
     downSampleRate = 4
@@ -461,32 +470,38 @@ def q2_5():
     im2 = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
 
     # get points:
-    N = 10  # number of corresponding points
-    p1, p2 = getPoints_SIFT(im1, im2, N)
+    p1, p2 = getPoints_SIFT(im1, im2)
     H2to1 = computeH(p1, p2)
     H_trans, out_size, axis_arr = Translation(im1, H2to1)
     wrap_im1 = warpH(im1, H_trans, out_size)
+    cv2.imwrite('./my_data/wrap_imTest_incline_SIFT.jpg', wrap_im1)
     warp_is_left = True
     warp_im1_scaled, im2_scaled = getScaled(im2, wrap_im1, axis_arr, warp_is_left)
     panoramaTest = imageStitching(im2_scaled, warp_im1_scaled)
+    panoramaTest = cv2.cvtColor(panoramaTest, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./my_data/panoramaTest_incline_SIFT.jpg', panoramaTest)
 
 def q2_7():
     # compare SIFT and Manuale image selection
     # beach
+    #beachTest(getPointMethod='Manual', useRANSAC=False)
+    beachTest(getPointMethod='SIFT', useRANSAC=False)
     # portugal
-    sintraTest(getPointMethod='Manual', useRANSAC=False)
-    sintraTest(getPointMethod='SIFT', useRANSAC=False)
+    #sintraTest(getPointMethod='Manual', useRANSAC=False)
+    #sintraTest(getPointMethod='SIFT', useRANSAC=False)
 
 def q2_8():
     sintraTest(getPointMethod='Manual', useRANSAC=True)
-    sintraTest(getPointMethod='SIFT', useRANSAC=True)
+    #sintraTest(getPointMethod='SIFT', useRANSAC=True)
 
 def q2_10():
     #Be Creative
     sintraTest(getPointMethod='SIFT', useRANSAC=True)
 
 if __name__ == '__main__':
-    q2_4()
+    q2_7()
+    #q2_8() #need to do again
+
     # print('my sintra')
     # panorama_final_sintra = sintraTest(getPointMethod='SIFT', useRANSAC=True)
     # plt.figure(6)
