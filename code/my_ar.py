@@ -7,15 +7,35 @@ from PIL import Image
 from matplotlib import pyplot as plt
 import my_homography as mh
 
-#Add imports if needed:
-
-#end imports
-
-
 #Add functions here:
-"""
-   Your code here
-"""
+def q3_1():
+    # create reference model
+    im_path = './data/pf_floor.jpg'
+    ref_image1 = create_ref(im_path)
+    cv2.imwrite('./my_data/ref_image1_final.jpg', ref_image1)
+
+def q3_2():
+    # implant an image inside another image
+
+    # example 1:
+    im_path = './data/pf_floor.jpg'
+    scene_path = './data/pf_desk.jpg'
+    scene_im = im2im(scene_path, im_path)
+    scene_im = cv2.cvtColor(scene_im, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./output/im2im1.jpg', scene_im)
+
+    # example 2:
+    im_path2 = './my_data/star_west.jpg'
+    scene_path2 = './my_data/bigbangcomicbookshop.jpg'
+    scene_im2 = im2im(scene_path2, im_path2)
+    scene_im2 = cv2.cvtColor(scene_im2, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./output/im2im2.jpg', scene_im2)
+
+    # example 3:
+    im_path3 = './my_data/friends_episode.jpg'
+    scene_path3 = './my_data/bill_gates.jpg'
+    scene_im3 = im2im(scene_path3, im_path3)
+    cv2.imwrite('./output/im2im3.jpg', scene_im3)
 #Functions end
 
 # HW functions:
@@ -50,21 +70,7 @@ def im2im(scene_path, im_path):
     scene_im[scaled_wrap_idx[:,0], scaled_wrap_idx[:,1], scaled_wrap_idx[:,2]] = wrap_ref_im1[wrap_idx[:,0], wrap_idx[:,1], wrap_idx[:,2]]
     return scene_im
 
-def q3_1():
-    # create reference model
-    im_path = './data/pf_floor.jpg'
-    ref_image1 = create_ref(im_path)
-    #scene_im3 = cv2.cvtColor(ref_image1, cv2.COLOR_BGR2RGB)
-    cv2.imwrite('./my_data/ref_image1_final.jpg', ref_image1)
-
-def q3_2():
-    # implant an image inside another image
-
-    # example 3:
-    im_path3 = './my_data/friends_episode.jpg'
-    scene_path3 = './my_data/bill_gates.jpg'
-    scene_im3 = im2im(scene_path3, im_path3)
-    cv2.imwrite('./my_data/bill_gates_plus_friends.jpg', scene_im3)
-
 if __name__ == '__main__':
-    q3_1()
+    q3_1()  # Create reference model
+    q3_2()  # Implant an image inside another image
+
