@@ -363,10 +363,10 @@ def q2_7():
     sintraTest(getPointMethod='SIFT', useRANSAC=False)
 
 def q2_8():
-    #beachTest(getPointMethod='SIFT', useRANSAC=True)
-    #beachTest(getPointMethod='Manual', useRANSAC=True)
+    beachTest(getPointMethod='SIFT', useRANSAC=True)
+    beachTest(getPointMethod='Manual', useRANSAC=True)
     sintraTest(getPointMethod='Manual', useRANSAC=True)
-    #sintraTest(getPointMethod='SIFT', useRANSAC=True)
+    sintraTest(getPointMethod='SIFT', useRANSAC=True)
 
 def q2_10():
     #Be Creative
@@ -487,11 +487,11 @@ def ransacH(p1, p2, nIter, tol):
     return bestH
 
 if __name__ == '__main__':
-    # q2_1()  # Manual finding corresponding points
-    # q2_2()  # Calculate transformation
-    # q2_3()  # Image warping
-    # q2_4()  # Panorama stitching
-    # q2_5()  # Autonomous panorama stitching using SIFT
-    #q2_7()  # compare SIFT and Manual image selection
-     q2_8()  # RANSAC
-    # q2_10() # Be Creative
+    q2_1()  # Manual finding corresponding points
+    q2_2()  # Calculate transformation
+    q2_3()  # Image warping
+    q2_4()  # Panorama stitching
+    q2_5()  # Autonomous panorama stitching using SIFT
+    q2_7()  # compare SIFT and Manual image selection
+    q2_8()  # RANSAC
+    q2_10() # Be Creative
